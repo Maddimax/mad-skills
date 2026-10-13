@@ -7,8 +7,9 @@ a missed event, a restart or a reconnect cannot cause a wrong action: the
 scan on (re)connect runs the same code.
 
 Everything goes over SSH except the PRECHECK trigger, which is a plugin
-action reachable only through REST and so needs the HTTP credentials in
-~/.gerrit. They are read when a PRECHECK is actually triggered.
+action reachable only through REST and so needs HTTP credentials: the
+GERRIT_HTTP_USER and GERRIT_HTTP_PASSWORD variables, else ~/.gerrit. They
+are read when a PRECHECK is actually triggered.
 
 Without --live nothing is posted: the bot only logs what it would do.
 """
@@ -19,6 +20,7 @@ import logging
 import os
 import queue
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -62,12 +64,15 @@ class Gerrit:
         self.ssh("review", "--submit", f"{number},{patchset}")
 
     def precheck(self, number, revision):
-        def cfg(key):
+        def cfg(key, variable):
+            if os.environ.get(variable):
+                return os.environ[variable]
             return subprocess.check_output(
                 ["git", "config", "-f", os.path.expanduser("~/.gerrit"), key],
                 text=True).strip()
         token = base64.b64encode(
-            f"{cfg('http.user')}:{cfg('http.pwd')}".encode()).decode()
+            f"{cfg('http.user', 'GERRIT_HTTP_USER')}:"
+            f"{cfg('http.pwd', 'GERRIT_HTTP_PASSWORD')}".encode()).decode()
         req = urllib.request.Request(
             f"https://{HOST}/a/changes/{number}/revisions/{revision}/"
             f"{PRECHECK_ACTION}",
@@ -79,6 +84,8 @@ class Gerrit:
 
 def notify(text):
     log.warning("NOTIFY: %s", text)
+    if not shutil.which("osascript"):
+        return
     escaped = text.replace("\\", "\\\\").replace('"', '\\"')
     subprocess.run(["osascript", "-e",
                     f'display notification "{escaped}" with title "Gerrit bot"'],
@@ -198,10 +205,11 @@ def stream(g, state, live, state_file):
             ch = ev.get("change", {})
             relevant = (ch.get("project") == PROJECT
                         and ch.get("owner", {}).get("username") == g.username)
-            log.info("event %s on %s %s%s", ev.get("type"), ch.get("project"),
-                     ch.get("number"), "" if relevant else " (ignored)")
             if not relevant:
+                log.debug("ignored %s on %s %s", ev.get("type"),
+                          ch.get("project"), ch.get("number"))
                 continue
+            log.info("event %s on %s", ev.get("type"), ch.get("number"))
             handle(g, state, ch["number"], live)
             save(state, state_file)
     finally:

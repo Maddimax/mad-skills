@@ -66,6 +66,51 @@ To check the decisions without any side effect, put a +2 on an open
 change and run `--once` in dry-run mode. It should print
 `DRY-RUN would trigger precheck`.
 
+## Docker
+
+Build the image:
+
+```bash
+docker build -t gerrit-precheck-bot .
+```
+
+The container needs an SSH key, the Gerrit host key and the user name.
+The key must have no passphrase, because the bot connects in batch mode.
+Get the host key from your own `known_hosts`, so nothing is trusted
+blindly:
+
+```bash
+ssh-keygen -F '[codereview.qt-project.org]:29418' | grep -v '^#' >| known_hosts
+```
+
+Run it as a dry run, the default:
+
+```bash
+docker run -d --name gerrit-bot --restart unless-stopped \
+  -e GERRIT_SSH_USER=<your Gerrit user> \
+  -v ~/.ssh/id_ed25519:/run/secrets/gerrit_ssh_key:ro \
+  -v "$PWD/known_hosts":/run/secrets/known_hosts:ro \
+  -v gerrit-bot-data:/data \
+  gerrit-precheck-bot
+```
+
+Add `--live` after the image name to really trigger prechecks and
+submit. The HTTP credentials for the PRECHECK trigger go in
+`-e GERRIT_HTTP_USER=... -e GERRIT_HTTP_PASSWORD=...` or in a mounted
+`-v ~/.gerrit:/home/bot/.gerrit:ro`.
+
+| Variable | Meaning |
+|---|---|
+| `GERRIT_SSH_USER` | Required. Gerrit SSH user name. |
+| `GERRIT_SSH_KEY` | Key path in the container. Default `/run/secrets/gerrit_ssh_key`. |
+| `GERRIT_KNOWN_HOSTS` | known_hosts path. Default `/run/secrets/known_hosts`. |
+| `GERRIT_HTTP_USER`, `GERRIT_HTTP_PASSWORD` | HTTP credentials; otherwise `~/.gerrit` is read. |
+
+The container runs as a non-root user and keeps its state in the `/data`
+volume. Logs go to `docker logs`, with UTC timestamps. There is no
+macOS notification in a container, so a failed PRECHECK or a change that
+is not submittable shows up only as a `NOTIFY:` line in the log.
+
 ## State
 
 `~/.gerrit-precheck-bot.json` records, per change, the revision the
