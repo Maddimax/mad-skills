@@ -111,6 +111,31 @@ volume. Logs go to `docker logs`, with UTC timestamps. There is no
 macOS notification in a container, so a failed PRECHECK or a change that
 is not submittable shows up only as a `NOTIFY:` line in the log.
 
+## Windows (scheduled task)
+
+Docker Desktop on Windows only starts when a user logs in, so after a
+reboot the container stays down. Running the script directly as a
+scheduled task starts at boot without a login. Requirements: Python 3,
+and Git for Windows for its `ssh`.
+
+Do not use the OpenSSH client that ships with Windows: it hangs whenever
+its output is a pipe, which is how the bot reads Gerrit's answers. The
+`ssh` from Git for Windows works. The bot picks the executable and the
+config from environment variables:
+
+| Variable | Meaning |
+|---|---|
+| `GERRIT_SSH` | The ssh executable, for example `C:\Program Files\Git\usr\bin\ssh.exe`. Default `ssh`. |
+| `GERRIT_SSH_CONFIG` | An ssh config file used instead of `~/.ssh/config`, with `User`, `Port`, `IdentityFile` and `UserKnownHostsFile`. |
+| `GERRIT_CREDENTIALS_FILE` | The git-config style file with the HTTP credentials. Default `~/.gerrit`. |
+
+A wrapper `.cmd` sets these and runs the script with `--live --state
+<file>`, appending to a log. The task runs it as your user with the
+logon type S4U (no stored password, no login needed) on a boot trigger,
+restarting on failure. Keep the folder with the key and credentials
+readable by your user only (`icacls <folder> /inheritance:r /grant:r
+"<machine>\<user>:(OI)(CI)F"`).
+
 ## State
 
 `~/.gerrit-precheck-bot.json` records, per change, the revision the

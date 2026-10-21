@@ -8,8 +8,14 @@ scan on (re)connect runs the same code.
 
 Everything goes over SSH except the PRECHECK trigger, which is a plugin
 action reachable only through REST and so needs HTTP credentials: the
-GERRIT_HTTP_USER and GERRIT_HTTP_PASSWORD variables, else ~/.gerrit. They
-are read when a PRECHECK is actually triggered.
+GERRIT_HTTP_USER and GERRIT_HTTP_PASSWORD variables, else the file named by
+GERRIT_CREDENTIALS_FILE, else ~/.gerrit. They are read when a PRECHECK is
+actually triggered.
+
+GERRIT_SSH_CONFIG names an ssh config file to use instead of ~/.ssh/config.
+GERRIT_SSH names the ssh executable. On Windows the bundled OpenSSH client
+hangs when its output is a pipe, so use the one that comes with Git for
+Windows there.
 
 Without --live nothing is posted: the bot only logs what it would do.
 """
@@ -42,17 +48,25 @@ PRECHECK_BODY = {"type": "default", "buildonly": False, "cherrypick": False}
 log = logging.getLogger("precheck-bot")
 
 
+def ssh_command():
+    command = [os.environ.get("GERRIT_SSH", "ssh")]
+    config = os.environ.get("GERRIT_SSH_CONFIG")
+    return [*command, "-F", config] if config else command
+
+
 class Gerrit:
     def __init__(self):
-        for line in subprocess.check_output(["ssh", "-G", HOST],
-                                            text=True).splitlines():
+        for line in subprocess.check_output([*ssh_command(), "-G", HOST],
+                                            encoding="utf-8",
+                                            stdin=subprocess.DEVNULL).splitlines():
             if line.startswith("user "):
                 self.username = line.split(None, 1)[1]
 
     def ssh(self, *args):
         return subprocess.run(
-            ["ssh", *SSH_OPTIONS, HOST, "gerrit", *args], capture_output=True,
-            text=True, check=True, timeout=SSH_TIMEOUT).stdout
+            [*ssh_command(), *SSH_OPTIONS, HOST, "gerrit", *args],
+            capture_output=True, encoding="utf-8", check=True,
+            stdin=subprocess.DEVNULL, timeout=SSH_TIMEOUT).stdout
 
     def query(self, q):
         out = self.ssh("query", "--format=JSON", "--current-patch-set",
@@ -68,7 +82,8 @@ class Gerrit:
             if os.environ.get(variable):
                 return os.environ[variable]
             return subprocess.check_output(
-                ["git", "config", "-f", os.path.expanduser("~/.gerrit"), key],
+                ["git", "config", "-f", os.path.expanduser(
+                    os.environ.get("GERRIT_CREDENTIALS_FILE", "~/.gerrit")), key],
                 text=True).strip()
         token = base64.b64encode(
             f"{cfg('http.user', 'GERRIT_HTTP_USER')}:"
@@ -175,10 +190,11 @@ def handle(g, state, n, live):
 
 
 def stream(g, state, live, state_file):
-    cmd = ["ssh", *SSH_OPTIONS, "-o", "ServerAliveInterval=30", HOST,
+    cmd = [*ssh_command(), *SSH_OPTIONS, "-o", "ServerAliveInterval=30", HOST,
            "gerrit", "stream-events",
            "-s", "comment-added", "-s", "patchset-created", "-s", "change-merged"]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+    p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                         encoding="utf-8", errors="replace")
     log.info("event stream started (pid %s)", p.pid)
     lines = queue.Queue()
 
