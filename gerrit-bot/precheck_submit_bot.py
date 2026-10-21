@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import queue
+import re
 import shlex
 import shutil
 import subprocess
@@ -120,6 +121,18 @@ def ci_result(comments, after, ps):
     return result
 
 
+def latest_precheck(comments, ps):
+    found = None
+    for i, c in enumerate(comments):
+        text = c["message"]
+        if (c["reviewer"].get("username") == CI_BOT
+                and text.startswith(f"Patch Set {ps}:")):
+            m = re.search(r"Quick Check: (Initializing|Passed|Failed)", text)
+            if m:
+                found = (i, m.group(1))
+    return found
+
+
 def reconcile(g, state, n, live):
     key = str(n)
     found = g.query(f"change:{n}")
@@ -142,14 +155,25 @@ def reconcile(g, state, n, live):
 
     s = state.get(key)
     if s is None or s["revision"] != rev:
-        if not live:
-            log.info("%s ps%s: DRY-RUN would trigger precheck", n, ps)
+        existing = latest_precheck(c["comments"], ps)
+        if existing and existing[1] != "Failed":
+            if not live:
+                log.info("%s ps%s: DRY-RUN would use the existing precheck (%s)",
+                         n, ps, existing[1].lower())
+                return
+            s = state[key] = {"revision": rev, "ps": ps, "after": existing[0],
+                              "done": None}
+            log.info("%s ps%s: using the existing precheck (%s)", n, ps,
+                     existing[1].lower())
+        else:
+            if not live:
+                log.info("%s ps%s: DRY-RUN would trigger precheck", n, ps)
+                return
+            after = len(c["comments"])
+            g.precheck(n, rev)
+            state[key] = {"revision": rev, "ps": ps, "after": after, "done": None}
+            log.info("%s ps%s: precheck triggered", n, ps)
             return
-        after = len(c["comments"])
-        g.precheck(n, rev)
-        state[key] = {"revision": rev, "ps": ps, "after": after, "done": None}
-        log.info("%s ps%s: precheck triggered", n, ps)
-        return
     if s["done"]:
         return
 

@@ -9,7 +9,11 @@ PRECHECK, and when the PRECHECK passes it submits the change.
 1. Listens to `gerrit stream-events` (`comment-added`, `patchset-created`,
    `change-merged`) for changes you own in `qt-creator/qt-creator`.
 2. A change that has a +2 on its **current** patch set, and is not WIP or
-   private, gets a PRECHECK triggered once for that patch set.
+   private, gets a PRECHECK triggered once for that patch set, unless
+   `qt_ci_bot` has already reported on that patch set: a passed run is
+   reused, so the bot submits right away if Gerrit reports the change as
+   submittable, and a run that is still in progress is waited for. A new
+   run is started when the last one failed or there is none.
 3. It then waits for a `qt_ci_bot` message for that patch set:
    - `Quick Check: Passed`: if Gerrit reports the change as submittable
      (a `submitRecords` entry with status `OK`, which also covers the +2
@@ -157,6 +161,9 @@ for changes that already have a +2.
   this project have not been tried. The bot submits only when Gerrit
   reports the change as submittable, and Qt's merge flow may add
   requirements beyond that.
+- A passed PRECHECK that finished before the +2 is reused. It tested the
+  change on the branch as it was then, so if the branch has moved since,
+  only Gerrit's own submit checks stand between that and the merge.
 - A PRECHECK takes about one to two hours. The bot does not poll, so it
   acts when the `qt_ci_bot` result arrives on the stream.
 - Only `qt-creator/qt-creator` and changes owned by the account in
