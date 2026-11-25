@@ -41,9 +41,10 @@ The MCP (`mcp__codereview__gerrit_*`) is for WRITES only: `gerrit_post_review`
 `gerrit_draft_comments`. Use `gerrit_get_reviews unresolved_only` only to verify
 a reply landed, and `gerrit_ci_*` only to dig into a failed CI run.
 
-Never vote Code-Review +2 (or any Code-Review vote) yourself, even if the MCP
-account is allowed to. Changes that would qualify for a +2 are put to me in the
-final question described below.
+Never vote Code-Review on your own initiative. The only vote you may give is
+Code-Review +2, and only on a change (or stack) for which I answered "+2" in the
+final question described below. Changes that would qualify for a +2 are put to
+me in that question.
 
 If a change is owned by me and asks for fixes, start an Opus 5.5 - Medium
 subagent to create the fix. When fixed and pushed (git push, as before),
@@ -104,9 +105,13 @@ most 4 questions per call: use further calls in a row for more. Cover every +2
 candidate (not mine; bot review of the latest patch set clean; PRECHECK passed
 on the latest patch set; no unresolved threads; not WIP). Each question offers
 exactly three options, applying to the whole stack, with these labels
-verbatim (a bare "+2" reads as "you give the +2"; it never means that):
-- "I'll +2 it myself": I give the votes in Gerrit; you do nothing further
-  for it. Never vote Code-Review yourself.
+verbatim:
+- "+2": you give Code-Review +2 on every change of the stack yourself with
+  `gerrit_post_review` (`labels: {"Code-Review": 2}`, no message and no other
+  votes), after re-checking with the script that each change is still a
+  candidate (bot clean and PRECHECK passed on the current patch set, no
+  unresolved threads, not WIP); skip and report any that no longer qualifies.
+  Afterwards confirm the vote landed.
 - "Test first": prepare a local build of the stack's top change (latest patch sets)
   and the test files/projects needed, tell me what to try, and launch the app
   only after I confirm (as described above). Do not vote or comment from the
@@ -122,10 +127,11 @@ Candidate list when nobody can answer: a scheduled run is unattended, so the
 question tool may be unavailable or go unanswered. In that case do not skip the
 step: end the run with a section "## +2 candidates" as the LAST thing in your
 final message. For each candidate give the number, subject, URL, one line why it
-qualifies (bot clean, precheck passed on psN), and the choices "I'll +2 it myself" / "Test first" /
-`skip`, then say that I can answer in this session by replying with
-`<number> test` etc. On a reply "test", run the test flow above; on "+2" or
-"skip" do nothing (I vote myself). Still never vote. If there are no candidates,
+qualifies (bot clean, precheck passed on psN), and the choices "+2" / "Test first" /
+"Skip", then say that I can answer in this session by replying with
+`<number> +2` etc. On a reply "test", run the test flow above; on "+2", give
+the vote as described above; on "skip" do nothing. Never vote before such a
+reply. If there are no candidates,
 write "No +2 candidates." instead.
 
 And finally, if you need to run a local test, use your own Windows and Linux
@@ -135,4 +141,4 @@ build machines (configure their hosts and checkout paths here).
 
 You are allowed to execute git, build the necessary projects, and read/write
 to gerrit through the codereview MCP server (comments, replies, resolving
-threads, precheck). You are not allowed to vote Code-Review +2.
+threads, precheck). You are allowed to vote Code-Review +2 only as described in the final question.
