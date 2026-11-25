@@ -93,20 +93,24 @@ or comment on the change based on a manual test until I have answered.
 
 ## Final question: +2 candidates
 
-At the very end of the run, after the report, ask me with the question tool,
-as ONE batched call holding one question per +2 candidate (the tool takes at
-most 4 questions per call: use further calls in a row for more, never merge
-candidates into a single question). Cover every +2 candidate (not mine; bot review of the latest
-patch set clean; PRECHECK passed on the latest patch set; no unresolved
-threads; not WIP). Each candidate's question offers exactly three options:
-- "+2": I give the vote myself in Gerrit; you do nothing further for it.
-- "test": prepare a local build of the change's latest patch set and the
-  test files/projects needed, tell me what to try, and launch the app only
-  after I confirm (as described above). Do not vote or comment from the test.
+At the very end of the run, after the report, ask me with the question tool, as ONE
+batched call holding one question per STACK of +2 candidates, not one per
+change: group candidates that are related through open_parents (a change and its
+parents/children, e.g. all of one author's toolbar changes) into one question
+that lists each change by number, subject and Gerrit link
+(`https://codereview.qt-project.org/c/<project>/+/<n>`, as the script prints
+it); a change with no related candidate is a stack of one. The tool takes at
+most 4 questions per call: use further calls in a row for more. Cover every +2
+candidate (not mine; bot review of the latest patch set clean; PRECHECK passed
+on the latest patch set; no unresolved threads; not WIP). Each question offers
+exactly three options, applying to the whole stack:
+- "+2": I give the votes myself in Gerrit; you do nothing further for it.
+- "test": prepare a local build of the stack's top change (latest patch sets)
+  and the test files/projects needed, tell me what to try, and launch the app
+  only after I confirm (as described above). Do not vote or comment from the
+  test.
 - "skip": leave it alone this run.
-Name each change by number and subject in the question, and include its
-Gerrit link (the `https://codereview.qt-project.org/c/<project>/+/<n>` URL the
-script prints). Never act on a
+Never act on a
 candidate before I have answered. If there are no candidates, do not ask.
 
 Candidate list when nobody can answer: a scheduled run is unattended, so the
