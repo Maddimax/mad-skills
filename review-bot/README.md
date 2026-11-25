@@ -2,9 +2,11 @@
 
 A scheduled Claude Code task that works through the Gerrit changes waiting for
 me (codereview.qt-project.org): it triages them, lets the Qt Code Review bot
-review other people's changes, gives +2 when the bot review and a PRECHECK are
-clean, and has a subagent fix my own changes (review findings, merge
-conflicts).
+review other people's changes, and has a subagent fix my own changes (review
+findings, merge conflicts). It never votes +2 itself: at the end of a run it
+asks one question listing every change whose bot review and PRECHECK are
+clean, with the options "+2" (I vote myself), "test" (it prepares a local
+build to try) or "skip".
 
 - `SKILL.md` - the scheduled task prompt (`~/.claude/scheduled-tasks/<name>/SKILL.md`).
 - `gerrit-attention-report.py` - read-only report the task runs first

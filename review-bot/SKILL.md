@@ -41,9 +41,9 @@ The MCP (`mcp__codereview__gerrit_*`) is for WRITES only: `gerrit_post_review`
 `gerrit_draft_comments`. Use `gerrit_get_reviews unresolved_only` only to verify
 a reply landed, and `gerrit_ci_*` only to dig into a failed CI run.
 
-The MCP account may vote +2 on Code-Review (`gerrit_post_review` `labels`).
-If a vote is refused because of the account's limits, do not work around it
-with REST or SSH; report the change as ready for my +2 instead.
+Never vote Code-Review +2 (or any Code-Review vote) yourself, even if the MCP
+account is allowed to. Changes that would qualify for a +2 are put to me in the
+final question described below.
 
 If a change is owned by me and asks for fixes, start an Opus 5.5 - Medium
 subagent to create the fix. When fixed and pushed (git push, as before),
@@ -73,14 +73,14 @@ A Qt Review Bot +1/-1 that Gerrit copied over a trivial rebase counts as the
 bot's verdict for the new patch set (the script reports it as clean/findings);
 do not start the bot again for it. Do not post your own findings. If the bot's review of the latest
 patch set has no unresolved findings (QtReviewBot Code-Review+1), list the
-change, give it Code-Review +2. Otherwise leave it alone and list it in the
-report.
+change, it is a +2 candidate (see below). Otherwise leave it alone and list it
+in the report.
 
-Only give +2 when a PRECHECK has also run successfully
+A change is a +2 candidate only when a PRECHECK has also run successfully
 on the latest patch set (the script's precheck field).
 If none was requested for that patch set, request one once with
-`gerrit_precheck` and hold the +2; if it is pending or failed, do not
-re-request it and do not +2, just list it in the report.
+`gerrit_precheck` and hold it back; if it is pending or failed, do not
+re-request it and it is not a candidate, just list it in the report.
 
 If a change (mine or someone else's) would benefit from a human trying it
 out, for example a visible UI or behaviour change that the bot cannot judge,
@@ -91,6 +91,20 @@ try. Only when I answer yes, launch the built application for me. Wait until
 that process has exited, then ask me for my opinion of the change. Do not vote
 or comment on the change based on a manual test until I have answered.
 
+## Final question: +2 candidates
+
+At the very end of the run, after the report, ask me ONE question (use the
+question tool) listing every +2 candidate (not mine; bot review of the latest
+patch set clean; PRECHECK passed on the latest patch set; no unresolved
+threads; not WIP). For each candidate offer exactly three options:
+- "+2": I give the vote myself in Gerrit; you do nothing further for it.
+- "test": prepare a local build of the change's latest patch set and the
+  test files/projects needed, tell me what to try, and launch the app only
+  after I confirm (as described above). Do not vote or comment from the test.
+- "skip": leave it alone this run.
+Name each change by number and subject in the question. Never act on a
+candidate before I have answered. If there are no candidates, do not ask.
+
 And finally, if you need to run a local test, use your own Windows and Linux
 build machines (configure their hosts and checkout paths here).
 
@@ -98,4 +112,4 @@ build machines (configure their hosts and checkout paths here).
 
 You are allowed to execute git, build the necessary projects, and read/write
 to gerrit through the codereview MCP server (comments, replies, resolving
-threads, precheck, votes including +2).
+threads, precheck). You are not allowed to vote Code-Review +2.
