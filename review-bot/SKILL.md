@@ -105,6 +105,16 @@ threads; not WIP). For each candidate offer exactly three options:
 Name each change by number and subject in the question. Never act on a
 candidate before I have answered. If there are no candidates, do not ask.
 
+Candidate list when nobody can answer: a scheduled run is unattended, so the
+question tool may be unavailable or go unanswered. In that case do not skip the
+step: end the run with a section "## +2 candidates" as the LAST thing in your
+final message. For each candidate give the number, subject, URL, one line why it
+qualifies (bot clean, precheck passed on psN), and the choices `+2` / `test` /
+`skip`, then say that I can answer in this session by replying with
+`<number> test` etc. On a reply "test", run the test flow above; on "+2" or
+"skip" do nothing (I vote myself). Still never vote. If there are no candidates,
+write "No +2 candidates." instead.
+
 And finally, if you need to run a local test, use your own Windows and Linux
 build machines (configure their hosts and checkout paths here).
 
