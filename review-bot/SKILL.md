@@ -93,10 +93,12 @@ or comment on the change based on a manual test until I have answered.
 
 ## Final question: +2 candidates
 
-At the very end of the run, after the report, ask me ONE question (use the
-question tool) listing every +2 candidate (not mine; bot review of the latest
+At the very end of the run, after the report, ask me with the question tool,
+as ONE batched call holding one question per +2 candidate (the tool takes at
+most 4 questions per call: use further calls in a row for more, never merge
+candidates into a single question). Cover every +2 candidate (not mine; bot review of the latest
 patch set clean; PRECHECK passed on the latest patch set; no unresolved
-threads; not WIP). For each candidate offer exactly three options:
+threads; not WIP). Each candidate's question offers exactly three options:
 - "+2": I give the vote myself in Gerrit; you do nothing further for it.
 - "test": prepare a local build of the change's latest patch set and the
   test files/projects needed, tell me what to try, and launch the app only
