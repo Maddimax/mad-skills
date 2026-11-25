@@ -103,21 +103,26 @@ it); a change with no related candidate is a stack of one. The tool takes at
 most 4 questions per call: use further calls in a row for more. Cover every +2
 candidate (not mine; bot review of the latest patch set clean; PRECHECK passed
 on the latest patch set; no unresolved threads; not WIP). Each question offers
-exactly three options, applying to the whole stack:
-- "+2": I give the votes myself in Gerrit; you do nothing further for it.
-- "test": prepare a local build of the stack's top change (latest patch sets)
+exactly three options, applying to the whole stack, with these labels
+verbatim (a bare "+2" reads as "you give the +2"; it never means that):
+- "I'll +2 it myself": I give the votes in Gerrit; you do nothing further
+  for it. Never vote Code-Review yourself.
+- "Test first": prepare a local build of the stack's top change (latest patch sets)
   and the test files/projects needed, tell me what to try, and launch the app
   only after I confirm (as described above). Do not vote or comment from the
   test.
-- "skip": leave it alone this run.
-Never act on a
+- "Skip": leave it alone this run.
+Phrase the question itself as "Which of these should I do something about?"
+rather than "what should I do?", and state in each option's description what
+you will and will not do. In your summary afterwards use the option labels, not
+only their effects. Never act on a
 candidate before I have answered. If there are no candidates, do not ask.
 
 Candidate list when nobody can answer: a scheduled run is unattended, so the
 question tool may be unavailable or go unanswered. In that case do not skip the
 step: end the run with a section "## +2 candidates" as the LAST thing in your
 final message. For each candidate give the number, subject, URL, one line why it
-qualifies (bot clean, precheck passed on psN), and the choices `+2` / `test` /
+qualifies (bot clean, precheck passed on psN), and the choices "I'll +2 it myself" / "Test first" /
 `skip`, then say that I can answer in this session by replying with
 `<number> test` etc. On a reply "test", run the test flow above; on "+2" or
 "skip" do nothing (I vote myself). Still never vote. If there are no candidates,
