@@ -102,7 +102,9 @@ threads; not WIP). For each candidate offer exactly three options:
   test files/projects needed, tell me what to try, and launch the app only
   after I confirm (as described above). Do not vote or comment from the test.
 - "skip": leave it alone this run.
-Name each change by number and subject in the question. Never act on a
+Name each change by number and subject in the question, and include its
+Gerrit link (the `https://codereview.qt-project.org/c/<project>/+/<n>` URL the
+script prints). Never act on a
 candidate before I have answered. If there are no candidates, do not ask.
 
 Candidate list when nobody can answer: a scheduled run is unattended, so the
