@@ -15,7 +15,11 @@ PRECHECK, and when the PRECHECK passes it submits the change.
    submittable, and a run that is still in progress is waited for. A new
    run is started when the last one failed or there is none.
 3. It then waits for a `qt_ci_bot` message for that patch set:
-   - `Quick Check: Passed`: if Gerrit reports the change as submittable
+   - `Quick Check: Passed`: if a parent change in its stack is not yet
+     merged, it waits. It looks again when one of your changes merges, or
+     at the next five-minute rescan for a parent someone else owns. Once
+     all parents are merged (or are plain commits on the branch), and
+     Gerrit reports the change as submittable
      (a `submitRecords` entry with status `OK`, which also covers the +2
      still being there), it submits.
    - `Quick Check: Failed`: it sends a macOS notification and stops. It
@@ -161,6 +165,9 @@ for changes that already have a +2.
   this project have not been tried. The bot submits only when Gerrit
   reports the change as submittable, and Qt's merge flow may add
   requirements beyond that.
+- A parent counts as merged when its change is MERGED, even when the
+  child sits on an older patch set of it than the one that merged. The
+  PRECHECK then tested the child on that older parent.
 - A passed PRECHECK that finished before the +2 is reused. It tested the
   change on the branch as it was then, so if the branch has moved since,
   only Gerrit's own submit checks stand between that and the merge.

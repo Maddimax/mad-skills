@@ -133,6 +133,21 @@ def latest_precheck(comments, ps):
     return found
 
 
+def unmerged_parents(g, patchset):
+    """Numbers of the open changes the patch set sits on.
+
+    A parent commit that belongs to no change is already on the branch. A
+    parent change counts as merged once it is MERGED, even if a newer patch
+    set than the one this change is based on is what merged.
+    """
+    waiting = []
+    for sha in patchset.get("parents", []):
+        changes = g.query(f"commit:{sha} project:{PROJECT}")
+        if changes and not any(c["status"] == "MERGED" for c in changes):
+            waiting.extend(c["number"] for c in changes)
+    return waiting
+
+
 def reconcile(g, state, n, live):
     key = str(n)
     found = g.query(f"change:{n}")
@@ -183,6 +198,11 @@ def reconcile(g, state, n, live):
     if result == "failed":
         s["done"] = "failed"
         notify(f"{n} ps{ps}: precheck failed, not submitting")
+        return
+    waiting = unmerged_parents(g, patchset)
+    if waiting:
+        log.info("%s ps%s: precheck passed, waiting for parent(s) %s to merge",
+                 n, ps, waiting)
         return
     if not any(r["status"] == "OK" for r in c.get("submitRecords", [])):
         s["done"] = "not-submittable"
@@ -250,7 +270,11 @@ def stream(g, state, live, state_file):
                           ch.get("project"), ch.get("number"))
                 continue
             log.info("event %s on %s", ev.get("type"), ch.get("number"))
-            handle(g, state, ch["number"], live)
+            if ev.get("type") == "change-merged":
+                # A merged parent can unblock a waiting child change.
+                scan(g, state, live)
+            else:
+                handle(g, state, ch["number"], live)
             save(state, state_file)
     finally:
         p.kill()
